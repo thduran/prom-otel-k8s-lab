@@ -54,6 +54,9 @@ A configuração define o collector como DaemonSet para garantir um agente em ca
 # Adicionar repositório
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
+# Criar namespace
+kubectl create ns monitoring
+
 # Instalar já usando o arquivo personalizado
 helm install my-otel-collector open-telemetry/opentelemetry-collector \
   -f otel-values.yaml \
