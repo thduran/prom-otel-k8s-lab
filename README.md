@@ -10,13 +10,11 @@ Utilizando o OpenTelemetry Collector como DaemonSet, coleta-se métricas de infr
 
 ### 1. Prometheus
 O Prometheus descobre automaticamente os pods do OpenTelemetry através do ServiceMonitor, sem necessidade de IPs estáticos.
-
-
+<img width="1496" height="441" alt="otel1" src="https://github.com/user-attachments/assets/565476c4-c2bc-49eb-9a06-7cc22e731805" />
 
 ### 2. Grafana dashboard
 Visualização tratada com PromQL para exibir o uso real de memória do node, convertendo bytes brutos para GiB.
-
-
+<img width="790" height="568" alt="otel2" src="https://github.com/user-attachments/assets/1ec37c37-b19a-406e-bb1b-63fe7212f051" />
 
 ---
 
