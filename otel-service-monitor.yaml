@@ -1,0 +1,17 @@
+# to implement dynamic service discovery into Prometheus Operator
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-collector-monitor
+  namespace: monitoring
+  labels:
+    release: monitoring # label for Prometheus to read this file
+spec:
+  selector:
+    matchLabels: # for Kubernetes find the service (otel-service.yaml)
+      app.kubernetes.io/instance: my-otel-collector
+      app.kubernetes.io/name: opentelemetry-collector
+  endpoints:
+  - port: metrics # tells Prometheus to look for port "metrics" inside the service
+    interval: 10s

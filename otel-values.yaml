@@ -1,0 +1,47 @@
+mode: daemonset # ensures a collector on each node
+
+image:
+  repository: "otel/opentelemetry-collector-contrib" # contains plugins for Prometheus
+  tag: "0.111.0"
+
+# security permissions
+presets:
+  hostMetrics:
+    enabled: true  # automatically configures volume mounts for /proc and /sys
+
+# grants read permission to host's protected files
+securityContext:
+  privileged: true # breaks container isolation to see host devices
+  runAsUser: 0 # root
+
+config:
+  receivers:
+    hostmetrics: # collects CPU, memory, disk, network data from the host (the node)
+      collection_interval: 10s
+      scrapers:
+        cpu: {}
+        memory: {}
+        load: {}
+        disk: {}
+        network: {}
+
+  processors:
+    batch: {} # batches metrics to reduce network calls and CPU load on Prometheus
+
+  exporters:
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+
+  service:
+    pipelines: # defines the data flow: Source > Process > Destination 
+      metrics: # it can be traces, logs...
+        receivers: [hostmetrics] # source - for apps it would be "otlp"
+        processors: [batch]
+        exporters: [prometheus] # awsmanagedprometheus for AMP, otlp for Datadog
+
+ports:
+  metrics:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP
