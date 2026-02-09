@@ -52,7 +52,7 @@ A configuração define o collector como DaemonSet para garantir um agente em ca
 
 ```bash
 # Adicionar repositório
-helm repo add open-telemetry [https://open-telemetry.github.io/opentelemetry-helm-charts](https://open-telemetry.github.io/opentelemetry-helm-charts)
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
 # Instalar já usando o arquivo personalizado
 helm install my-otel-collector open-telemetry/opentelemetry-collector \
