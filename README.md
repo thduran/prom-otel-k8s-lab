@@ -96,6 +96,7 @@ kubectl apply -f otel-service-monitor.yaml
 
 ---
 <div id="pt-br"></div>
+
 # Monitoramento de infra Kubernetes com OpenTelemetry e Grafana
 
 Este projeto implementa um pipeline de observabilidade para monitorar a saúde e os recursos (CPU, memória, disco, rede) dos nodes de um cluster Kubernetes.
