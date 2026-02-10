@@ -40,15 +40,26 @@ Visualização tratada com PromQL para exibir o uso real de memória do node, co
 
 ### 1. Pré-requisitos
 * Cluster Kubernetes
-* Stack do Prometheus (ex: `kube-prometheus-stack`).
 
-### 2. Configuração do OTel (`otel-values.yaml`)
+### Prometheus
+
+```bash
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+
+# Instala a stack completa (Prometheus + Grafana + Alertmanager)
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace
+```
+
+### Configuração do OTel (`otel-values.yaml`)
 A configuração define o collector como DaemonSet para garantir um agente em cada node.
 
 * **Segurança:** Habilitamos `privileged: true` e `runAsUser: 0`. Necessário para que o container "quebre" o isolamento e consiga ler arquivos protegidos do sistema (`/proc`, `/sys`) para métricas de hardware real.
 * **Pipeline:** Configurado fluxo: `hostmetrics` (receiver) → `batch` (processor) → `prometheus` (exporter).
 
-### 3. Deploy via Helm
+### Deploy via Helm
 
 ```bash
 # Adicionar repositório
@@ -63,7 +74,7 @@ helm install my-otel-collector open-telemetry/opentelemetry-collector \
   -n monitoring
 ```
 
-### 4. Service discovery e exposição
+### Service discovery e exposição
 Expor o serviço e permitir que o Prometheus Operator o encontre:
 
 ```bash
