@@ -1,3 +1,101 @@
+[PT-BR, clique aqui](#pt-br)
+
+# Monitoring of Kubernetes infra with OpenTelemetry and Grafana
+
+This project implements an observability pipeline to monitor a Kubernetes cluster nodes' health and resources (CPU, memory, disk, network).
+
+Using the OpenTelemetry Collector as a DaemonSet, it collects metrics of infrastructure directly from the host (node) and exports to Prometheus. Visualization handled in Grafana.
+
+---
+
+## Snapshots
+
+### 1. Prometheus
+Prometheus automatically discovers the OpenTelemetry pod through ServiceMonitor, removing the necessity for static IPs.
+<img width="1496" height="441" alt="otel1" src="https://github.com/user-attachments/assets/565476c4-c2bc-49eb-9a06-7cc22e731805" />
+
+### 2. Grafana dashboard
+Visualization is handled with PromQL to display the node's real memory usage, converting raw bytes to GiB.
+<img width="790" height="568" alt="otel2" src="https://github.com/user-attachments/assets/1ec37c37-b19a-406e-bb1b-63fe7212f051" />
+
+---
+
+## Motivation for implementation
+
+1. When adopting the OpenTelemetry pattern, data collection is decoupled from storage. If a company decides to migrate from Prometheus to Datadog, Dynatrace, or another, just updating an exporter configuration is enough. There'll be no need to update the application's code.
+2. The monitoring runs on the host (node) level, not isolated in the container. It prevents an overloaded node from disturbing the performance of all critical pods in it.
+3. Using batch processors in the OTel Collector reduces network overhead and the Prometheus load, grouping metrics before sending.
+
+---
+
+## Stack
+
+* **Kubernetes:** Container orchestration.
+* **OpenTelemetry Collector:** Collection agent and telemetry processing.
+* **Prometheus Operator:** Storage of metrics and dynamic service discovery.
+* **Grafana:** Visualization and dashboards.
+* **Helm:** Package management and deploy.
+
+---
+
+## Reproducing it
+
+```bash
+# 1. Add repositories (Prometheus and OpenTelemetry)
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+
+# 2. Install Prometheus stack
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace
+```
+
+### OTel configuration (`otel-values.yaml`)
+It defines the collector as a DaemonSet to ensure one agent on each node.
+
+* **Security:** Enabled `privileged: true` and `runAsUser: 0`. So the container "breaks" its isolation and can read system's protected files (`/proc`, `/sys`) for real hardware metrics.
+* **Pipeline:** Flow configured: `hostmetrics` (receiver) → `batch` (processor) → `prometheus` (exporter).
+
+### OpenTelemetry deploy
+
+```bash
+# Install the Collector using a custom values file
+helm install my-otel-collector open-telemetry/opentelemetry-collector \
+  -f otel-values.yaml \
+  -n monitoring
+```
+
+### Service discovery and exposure
+Exposes the service and allows Prometheus Operator to find it:
+
+```bash
+# Creates the service
+kubectl apply -f otel-service.yaml
+
+# Creates ServiceMonitor (discovery rules for Prometheus)
+kubectl apply -f otel-service-monitor.yaml
+```
+
+## Challenges and learning
+
+* **Dynamic Service discovery:** Prometheus initially couldn't find the target. The solution was to implement a `ServiceMonitor` configured with the correct labels (`release: monitoring`), allowing the Prometheus Operator to find OTel pods automatically.
+
+* **Security vs. observability:** It was necessary to configure `securityContext` as privileged. Although it is a risk in common applications, for host agents it is a mandatory exception, because isolated containers do not have read permissions for the physical machine's disk and kernel I/O statistics.
+
+* **Grafana data treatment:** Metrics were coming in bytes and overlapping. I used PromQL (`sum by (state)`) and the unit formatting to transform raw data.
+
+## Project's structure
+
+* `otel-values.yaml`: Configuration of the DaemonSet, receivers, processors and exporters.
+
+* `otel-service.yaml`: Defines the service of K8s to expose the metrics port.
+
+* `otel-service-monitor.yaml`: "Teaches" Prometheus how to monitor the specific service.
+
+---
+<div id="pt-br"></div>
 # Monitoramento de infra Kubernetes com OpenTelemetry e Grafana
 
 Este projeto implementa um pipeline de observabilidade para monitorar a saúde e os recursos (CPU, memória, disco, rede) dos nodes de um cluster Kubernetes.
